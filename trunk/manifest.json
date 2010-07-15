@@ -1,0 +1,16 @@
+{
+   "description": "A TimeSheet tie in to the online FreshBooks site.",
+   "icons": {
+      "128": "icon_128.png",
+      "48": "icon_48.png"
+   },
+   "browser_action": {
+      "default_icon": "icon.png",
+      "popup": "popup.html"
+   },
+   "name": "FreshBooks TimeSheet",
+   "background_page": "background.html",   
+   "options_page": "options.html",
+   "permissions": [ "tabs", "http://*.freshbooks.com/", "https://*.freshbooks.com/" ],
+   "version": "0.1"
+}

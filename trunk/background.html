@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<script type="text/javascript" src="js/jquery-1.2.6.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/json2.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
+<script type="text/javascript">
+	var myProjects;
+	var refreshCallback = null;
+	var interval;
+	var	start;
+
+	function load(){
+		var running;
+		var pause;
+		
+		loadProjects();
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.running")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.running")!=""){
+			running = localStorage.getItem("com.yogs.chrome.freshbooks.running");
+		}
+
+		//Did they pause
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.pause")!=null && 
+				localStorage.getItem("com.yogs.chrome.freshbooks.pause")!=""){
+			start = new Date(parseInt(localStorage.getItem("com.yogs.chrome.freshbooks.start")));
+			pauseTime = new Date(parseInt(localStorage.getItem("com.yogs.chrome.freshbooks.pause")));
+
+			var timeBeforePause = (pauseTime.getTime() - start.getTime());
+			var now = new Date();
+			start = new Date((now.getTime() - timeBeforePause));
+
+			var hrs = timeBeforePause/3600000;
+			chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
+		}
+		else if (localStorage.getItem("com.yogs.chrome.freshbooks.start")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.start")!=""){
+			start = new Date(parseInt(localStorage.getItem("com.yogs.chrome.freshbooks.start")));
+			refresh(); 			
+		}
+		
+	}
+	
+	function loadProjects()
+	{
+	    var login = "";
+		var token = "";
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != ""){
+			token = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
+		}
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") !=""){
+			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+		}
+
+		if (!validateLogin(login)) { alert("Invalid login"); return false; }
+		if (!validateToken(token)) { alert("Invalid token"); return false; }
+		
+		com.freshbooks.api.fetchFullList(login,token,'project',{},xmlTimeout,
+			function (list) {
+				if (list.status.ok) {
+					if (debug) alert("Got project list OK");
+					
+					myProjects = list.list;
+					loadTasks();
+					if (debug) console.log(myProjects);
+					
+				}
+				else
+				{
+					errorLoading(list);
+				}
+			});		
+	}
+
+	function loadTasks()
+	{
+		var taskCount = 0;       // Semaphore for closures so they know when everyone's done
+	    var login = "";
+		var token = "";
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != ""){
+			token = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
+		}
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") !=""){
+			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+		}
+		
+		if (!validateLogin(login)) { alert("Invalid login"); return false; }
+		if (!validateToken(token)) { alert("Invalid token"); return false; }
+		
+		for (pid in myProjects) { taskCount++; }
+		if (taskCount == 0) {
+			alert("No projects found.  Add some!");
+			return false;
+		}
+
+		for (pid in myProjects)
+		{
+			com.freshbooks.api.fetchFullList(login,token,'task',{project_id:pid},xmlTimeout,
+				(function(proj_id){ return function (list) {
+					taskCount--; // This is safe because JS is not multithreaded.
+					if (list.status.ok) {
+						myProjects[proj_id].tasks = list.list;
+					} else {
+						alert("Error loading a project's tasks.");
+					}
+
+					if (taskCount) {
+						if (debug) alert("Loading " + taskCount + " more...");
+					} else {
+						//finished fetching so see if we need to refresh the lists on options page
+						if (refreshCallback != null){
+							refreshCallback();
+							refreshCallback=null;
+						}
+					}
+
+					
+				}})(pid));
+		}
+	}
+
+	//The background page takes care of the running update of the icon/badge text
+	function refresh(){
+		interval= setInterval ( "refresh_interval();", 250 );
+	}
+	
+	function refresh_interval(){
+		var now = new Date();
+		
+		//addition of 500ms displays chosen time before starting to record
+		var elapsed = (now.getTime() - start.getTime() + 500);
+
+		var hrs = elapsed/3600000;
+		chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
+
+	}
+
+	//Cancel the timer thats updating the Icon text
+	function reset(){
+		start = null;
+		chrome.browserAction.setBadgeText({text: ""});		
+		clearInterval(interval);
+	}
+		
+	function pause(){
+		clearInterval(interval);
+	}
+
+	load();	
+	
+</script>
+</head>
+<body>
+
+</body>
+</html>

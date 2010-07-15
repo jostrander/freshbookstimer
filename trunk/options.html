@@ -1,0 +1,83 @@
+<script type="text/javascript" src="js/jquery-1.2.6.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/json2.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
+<script type="text/javascript">
+
+	function saveSettings() {
+		if(document.forms.settings.login_key.value != "")
+				localStorage.setItem("com.yogs.chrome.freshbooks.login_key", document.forms.settings.login_key.value);
+		else
+		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
+		
+		if(document.forms.settings.logon_url.value != "")
+				localStorage.setItem("com.yogs.chrome.freshbooks.logon_url", document.forms.settings.logon_url.value);
+		else
+		localStorage.removeItem("com.yogs.chrome.freshbooks.logon_url");
+		
+	}
+	function clearSettings() {
+		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
+		localStorage.removeItem("com.yogs.chrome.freshbooks.logon_url");
+	}
+	function loadSettings() {
+		document.forms.settings.login_key.value = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
+		document.forms.settings.logon_url.value = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+	}
+	function goToUrl(url) {
+	  chrome.tabs.getAllInWindow(undefined, function(tabs) {
+	    for (var i = 0, tab; tab = tabs[i]; i++) {
+	      if (tab.url && (tab.url == url)) {
+	        chrome.tabs.update(tab.id, {selected: true});
+	        return;
+	      }
+	    }
+	    chrome.tabs.create({url: url});
+	  });	  	
+	}
+	
+</script>
+<form name="settings" onsubmit="saveSettings(); return false;">
+<table border="0" style="font-family:sans-serif">
+    <tbody>
+        <tr>
+            <td><h1><image src="icon_48.png" height=28px width=28px />FreshBooks TimeSheet</h1></td>
+        </tr>
+	<tr>
+		<td align="right"></td>
+	</tr>
+        <tr>
+            <td><h2>FreshBooks Connection Details:</h2></td>
+        </tr>
+        <tr>
+            <td align="right">Authentication Token: <input type="text" name="login_key"></input></td>
+        </tr>
+        <tr>
+            <td align="right">Team URL: <input type="text" name="logon_url" value="" width="35"></input>.freshbooks.com</td>
+        </tr>
+        <tr>
+            <td align="right"><input type="button" value="Clear" onclick="clearSettings(); loadSettings();" /><input type="button" value="Save" onclick="saveSettings();" /></td>
+        </tr>
+        <tr>
+            <td><h2>FreshBooks Account Details:</h2></td>
+        </tr>
+        <tr>
+            <td align="right">Projects: <select id="Projects" onchange="setTasksFromProject(event)">
+					<option value="-1">Projects</option>
+				</select>
+			</td>
+		</tr>
+		</tr>
+            <td align="right">Project Tasks: <select id="Tasks">
+					<option value="-1">Tasks</option>
+				</select>
+			</td>
+        </tr>
+        <tr>
+            <td align="right"><input type="button" value="Update Projects" onclick="updateProjects();" /></td>
+        </tr>
+        
+    </tbody>
+</table>
+</form>
+<script type="text/javascript">loadSettings();populateProjects();</script>
