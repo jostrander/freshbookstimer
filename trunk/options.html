@@ -1,28 +1,53 @@
+<html>
+<head>
+<title>Project Timer</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
 <script type="text/javascript" src="js/jquery-1.2.6.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/json2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
 <script type="text/javascript">
 
+	function load(){
+		loadSettings();
+		//populateProjects();
+		populateClients();
+	}
+
 	function saveSettings() {
-		if(document.forms.settings.login_key.value != "")
-				localStorage.setItem("com.yogs.chrome.freshbooks.login_key", document.forms.settings.login_key.value);
+	
+		if($("#login_key").val() != "")
+				localStorage.setItem("com.yogs.chrome.freshbooks.login_key", $("#login_key").val());
 		else
 		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
 		
-		if(document.forms.settings.logon_url.value != "")
-				localStorage.setItem("com.yogs.chrome.freshbooks.logon_url", document.forms.settings.logon_url.value);
+		if($("#logon_url").val() != "")
+				localStorage.setItem("com.yogs.chrome.freshbooks.logon_url", $("#logon_url").val());
 		else
 		localStorage.removeItem("com.yogs.chrome.freshbooks.logon_url");
+		
+		if($("#auto_stop").val() != "")
+				localStorage.setItem("com.yogs.chrome.freshbooks.auto_stop", $("#auto_stop").val());
+		else
+		localStorage.removeItem("com.yogs.chrome.freshbooks.auto_stop");
+
+		localStorage.setItem("com.yogs.chrome.freshbooks.round_time", $("input[name='round_time']:checked").val());
 		
 	}
 	function clearSettings() {
 		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
 		localStorage.removeItem("com.yogs.chrome.freshbooks.logon_url");
+		localStorage.removeItem("com.yogs.chrome.freshbooks.auto_stop");
+		localStorage.removeItem("com.yogs.chrome.freshbooks.round_time");
 	}
 	function loadSettings() {
-		document.forms.settings.login_key.value = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
-		document.forms.settings.logon_url.value = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+		$("#login_key").val( localStorage.getItem("com.yogs.chrome.freshbooks.login_key"));
+		$("#logon_url").val( localStorage.getItem("com.yogs.chrome.freshbooks.logon_url"));
+		$("#auto_stop").val( localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop"));
+		
+		var str = localStorage.getItem("com.yogs.chrome.freshbooks.round_time");
+		$("input:radio[name=round_time]").val([ str ]);
+		$(".radiolist[value='" + str + "']").attr("checked", true);		
 	}
 	function goToUrl(url) {
 	  chrome.tabs.getAllInWindow(undefined, function(tabs) {
@@ -36,48 +61,242 @@
 	  });	  	
 	}
 	
+	function submitHrs(){
+		var hrs = new Number( $("#Hours").val() );
+		
+		if (hrs == "NaN"){
+			alert("Please enter the number of hours in a valid numerical format");			
+		} else {
+			submitHours(Number(hrs));
+		}
+	}
+	
+	function reset(){
+		$("#Hours").val(' ');
+	}
 </script>
-<form name="settings" onsubmit="saveSettings(); return false;">
-<table border="0" style="font-family:sans-serif">
-    <tbody>
+<style type="text/css">
+
+body {
+    font-family: arial, sans-serif;
+    font-size: 80%;
+    background: #6BACCF;
+    color: #fff;
+}
+
+body a, body a:visited {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px dotted #fff;
+}
+
+body a:hover {
+    border-bottom: 1px solid #fff;
+}
+
+h1 {
+    margin-top: 0;
+}
+
+#optionsBox {
+    margin: 0 auto;
+    margin-top: 30px;
+    text-align: center;
+}
+
+#optionsBox img {
+    vertical-align: text-bottom;
+}
+
+#optionsBox input {
+    margin-top: 5px;
+}
+
+span.field {
+    padding-top:8px;
+    clear:both;
+    float:left;
+    text-align:right;
+    width: 80px;
+}
+
+table {
+	border-width: 5px;
+	border-style: outset;
+	border-color: gray;
+	border-collapse: separate;
+    background-color: #fff;
+    color: #000;
+    font-size: 90%;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+}
+
+table.top_table {
+    position: relative;
+	border-bottom-width: 0px;	
+	border-bottom-style: none;
+}
+
+table.middle_table {
+	border-top-width: 1px;
+	border-top-style: dotted;
+	border-top-color: gray;
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	border-bottom-color: gray;
+}
+
+table.bottom_table {
+	border-top-width: 0px;
+	border-top-style: none;	
+}
+
+table td {
+	background-color: white;
+	border: none;
+}
+
+.left_column {
+	width: 200px;
+	text-align: right;
+}
+
+form {
+    width: 600px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+#languages {
+    font-size: 80%;
+    height: 20px;
+}
+
+.left{
+    float: left;
+    margin-top: 5px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.top_right {
+    right: 15px;
+    top: 5px;
+    position: absolute;
+}
+
+.select {
+	width: 250px;
+}
+
+.token {
+	width: 250px;
+}
+
+.url_start{
+	width: 150px;
+}
+
+.button{
+	cursor:pointer;
+}
+
+.input_4{
+	width: 60px;
+}
+
+#footer{
+	height:12px;
+	width:100%;
+	padding:1px;
+	display:block;	
+}
+#footer p{
+	font-family:Arial, Helvetica, sans-serif;
+	margin-top:-2px;
+	font-size:12px;
+}
+
+p.status{
+	width: 100%;
+	text-align: center;
+}
+
+</style>	
+</head>
+<body onload="load();">
+
+<div id="optionsBox">
+    <h1>Project Timer</h1>
+ 	<form name="settings">
+ 	<table class="top_table">
         <tr>
-            <td><h1><image src="icon_48.png" height=28px width=28px />FreshBooks TimeSheet</h1></td>
+            <td>                
+                <span class="top_right"><img src="clock_48.png"></span>
+                <h1>Options</h1>
+                <br /><p>Please take a moment and configure the extension to fit your needs. Ensure that you keep your Authentication as secret as you would a password.</p><br />
+            </td>
         </tr>
-	<tr>
-		<td align="right"></td>
-	</tr>
+ 	</table>
+ 	
+ 	<table class="middle_table">
         <tr>
-            <td><h2>FreshBooks Connection Details:</h2></td>
-        </tr>
-        <tr>
-            <td align="right">Authentication Token: <input type="text" name="login_key"></input></td>
-        </tr>
-        <tr>
-            <td align="right">Team URL: <input type="text" name="logon_url" value="" width="35"></input>.freshbooks.com</td>
-        </tr>
-        <tr>
-            <td align="right"><input type="button" value="Clear" onclick="clearSettings(); loadSettings();" /><input type="button" value="Save" onclick="saveSettings();" /></td>
+            <td valign="top" colspan="2">
+                <h3>FreshBooks Account Details</h3>
+            </td>
         </tr>
         <tr>
-            <td><h2>FreshBooks Account Details:</h2></td>
+            <td class="left_column">Authentication Token:</td><td><input type="text" id="login_key" name="login_key" class="token"></input></td>
         </tr>
         <tr>
-            <td align="right">Projects: <select id="Projects" onchange="setTasksFromProject(event)">
-					<option value="-1">Projects</option>
-				</select>
-			</td>
-		</tr>
-		</tr>
-            <td align="right">Project Tasks: <select id="Tasks">
-					<option value="-1">Tasks</option>
-				</select>
-			</td>
+        	<td class="left_column">Team URL:</td><td><input type="text" id="logon_url" name="logon_url" value="" class="url_start"></input>.freshbooks.com</td>
+        </tr>     	
+ 	</table>
+ 	<table class="middle_table">
+        <tr>
+            <td valign="top" colspan="2">
+                <h3>Extension Options</h3>
+            </td>
         </tr>
         <tr>
-            <td align="right"><input type="button" value="Update Projects" onclick="updateProjects();" /></td>
+            <td class="left_column">Auto-stop timer after :</td><td><input type="text" id="auto_stop" name="auto_stop" class="input_4" maxlength="4"></input>&nbsp;(hours e.g. 4 or 0.5)</td>
         </tr>
-        
-    </tbody>
-</table>
-</form>
-<script type="text/javascript">loadSettings();populateProjects();</script>
+        <tr>
+        	<td class="left_column">Round Time UP:</td><td>
+        	    <input type="radio" name="round_time" id="round_time0" value="0" checked="checked"></input> <label for="round_time0">No</label> <a title="Submit hours as captured" style="cursor: help">?</a>
+                <input type="radio" name="round_time" id="round_time1" value="6"></input> <label for="round_time1">.1 Hrs</label> <a title="Round to 0.1 Hrs (6 minutes) before submitting" style="cursor: help">?</a>
+                <input type="radio" name="round_time" id="round_time2" value="15"></input> <label for="round_time2">.25 Hrs</label> <a title="Round to 1/4 Hrs before submitting" style="cursor: help">?</a>
+        	</td>
+        </tr>     	
+ 	</table>
+ 	<table class="bottom_table">
+        <tr>
+            <td valign="top" colspan="2">
+            	<h3>FreshBooks Project Details</h3>
+            </td>
+        </tr>
+        <tr>
+	            <td class="left_column">Clients:</td><td><select id="Clients" onchange="setProjectsFromClient(event)" class="select"><option value="-1">Clients</option></select></td>
+        </tr>
+        <tr>
+	            <td class="left_column">Projects:</td><td><select id="Projects" onchange="setTasksFromProject(event)" class="select"><option value="-1">Projects</option></select></td>
+        </tr>
+        <tr>
+	            <td class="left_column">Tasks:</td><td><select id="Tasks" class="select"><option value="-1">Tasks</option></select></td>
+        </tr> 	
+        <tr>
+	            <td class="left_column">Submit Time:</td><td><input type="text" id="Hours" class="input_4" maxlength="4"><img id="submit" class="button" src="submit.png" onClick="submitHrs();"></td>
+        </tr> 	
+        <tr>
+	            <td colspan="2"><div id="footer"><p id="status_1" class="status"></p></div></td>
+        </tr> 	
+ 	</table>
+	<div style="text-align: right">
+		<button onclick="updateProjects();" style="font-weight: bold;">Update Projects</button><button onclick="clearSettings(); loadSettings();" style="font-weight: bold;">Clear Settings</button><button onclick="saveSettings();" style="font-weight: bold;">Save Settings</button>
+	</div>
+    </form>
+</div>
+</body>
+</html>

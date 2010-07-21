@@ -1,9 +1,9 @@
 // Copyright (c) 2008 2ndSite Inc. (www.freshbooks.com)
 // Licenced under the MIT license (see MITLICENSE.txt).
 
-com.freshbooks.api.UA = "FreshBooks Google Chrome Extension 0.1";
+	com.freshbooks.api.UA = "Project Timer";
 	var bgpage = chrome.extension.getBackgroundPage();
-	var debug = true; 
+	var debug = false; 
 	var xmlTimeout = 15 * 1000; // Wait this many milliseconds for FreshBooks to reply before cancelling an XML call.
 
 	function gotofreshbooks() {
@@ -13,10 +13,36 @@ com.freshbooks.api.UA = "FreshBooks Google Chrome Extension 0.1";
 
 	function updateProjects(){
 
-		bgpage.refreshCallback = function(){populateProjects();};
+		bgpage.refreshCallback = function(){populateClients();};
+		bgpage.loadClients();
 		bgpage.loadProjects();
 	}
 	
+	function populateClients()
+	{
+		// Get our combo box
+		var cl = $("#Clients")[0];
+
+		// Clear all previous values
+		cl.options.length = 0;
+		
+		var sortedList = [];
+
+		for (var id in bgpage.myClients) {
+			sortedList.push({"id":id,"organization":bgpage.myClients[id].organization});
+		}
+		sortedList.sort(com.freshbooks.api.sortclient);
+		
+		// Add the new items
+		for (var i in sortedList)
+		{
+			//if (debug) alert("Adding " + sortedList[i].id + " '" + sortedList[i].name + "'");
+			cl.options[i] = new Option(sortedList[i].organization, sortedList[i].id);
+		}
+
+		setProjectsFromClient();
+	}
+
 	function populateProjects()
 	{
 		// Get our combo box
@@ -29,6 +55,34 @@ com.freshbooks.api.UA = "FreshBooks Google Chrome Extension 0.1";
 
 		for (var id in bgpage.myProjects) {
 			sortedList.push({"id":id,"name":bgpage.myProjects[id].name});
+		}
+		sortedList.sort(com.freshbooks.api.sortproject);
+		
+		// Add the new items
+		for (var i in sortedList)
+		{
+			//if (debug) alert("Adding " + sortedList[i].id + " '" + sortedList[i].name + "'");
+			pr.options[i] = new Option(sortedList[i].name, sortedList[i].id);
+		}
+
+		setTasksFromProject();
+	}
+
+	function setProjectsFromClient()
+	{
+		// Get our combo box
+		var cientId = $("#Clients")[0].value;
+		var pr = $("#Projects")[0];
+
+		// Clear all previous values
+		pr.options.length = 0;
+		
+		var sortedList = [];
+
+		for (var id in bgpage.myProjects) {
+			if (bgpage.myProjects[id].client_id == cientId){
+				sortedList.push({"id":id,"name":bgpage.myProjects[id].name});
+			}
 		}
 		sortedList.sort(com.freshbooks.api.sortproject);
 		
@@ -142,5 +196,128 @@ com.freshbooks.api.UA = "FreshBooks Google Chrome Extension 0.1";
 		};
 	})();
 	
+	function submitHours(time)
+	{
+	    var login = "";
+		var token = "";
 
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != ""){
+			token = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
+		}
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") !=""){
+			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+		}
+
+		if (!validateLogin(login)) { alert("Invalid login"); return false; }
+		if (!validateToken(token)) { alert("Invalid token"); return false; }
+		
+		var r = com.freshbooks.api.GetXMLHttpRequest(login, token, true);
+	
+		// Read Project
+		var projectId = $("#Projects")[0].value;
+	
+		// Read Task
+		var taskId = $("#Tasks")[0].value;
+		if (taskId == "") {
+			setStatus("status_1","You need to select a task");
+			return false;
+		}
+	
+		// Notify user that we're posting
+		disableProjectsAndTasks();
+		$("#submit")[0].disabled = true;
+	
+		function enableInputs() {
+			enableProjectsAndTasks();
+			$("#submit")[0].disabled = false;
+		};
+	
+		var entryCreateTimeout = setTimeout( function () {
+				alert( "Timed out. :(");
+				r.abort();
+				enableInputs();
+				entryCreateTimeout = null;
+			}, xmlTimeout);
+	
+		// Notify the user when we're done posting
+		r.onreadystatechange = function () {
+			if (r.readyState == 4 && r.status == 200)
+			{
+				if (entryCreateTimeout)
+				{
+					clearTimeout(entryCreateTimeout);
+					entryCreateTimeout = null;
+				}
+				
+				if (com.freshbooks.api.getResponseStatus(r.responseXML) == "ok") {
+					enableInputs();
+					
+					reset();
+					bgpage.reset();
+	
+					setStatus("status_1", "Hours submitted!");
+					//$("#Notes")[0].value = "";
+				} else {
+					enableInputs();
+					setStatus("status_1", $("error",r.responseXML).text());
+				}
+			}
+		};
+	
+		var d = new Date();
+		// Post hours
+		r.send(com.freshbooks.api.Request("time_entry.create",
+			{
+				time_entry: {
+					project_id: projectId,
+					task_id: taskId,
+					hours: time,
+					notes: "",
+					date: (""+d.getFullYear()+"-"+formatTwoDigits(d.getMonth()+1)+"-"+formatTwoDigits(d.getDate()))
+				}
+			}));
+	}
+	
+	function getRoundedHours(minutes){
+		var round, hours;
+		
+		if (debug) console.log("getRoundedHours::minutes=" + minutes );
+		
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.round_time")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.round_time")!=""){
+			round = localStorage.getItem("com.yogs.chrome.freshbooks.round_time");
+		}
+
+		if (debug) console.log("getRoundedHours::round=" + round );
+
+		if (round == 0){
+			hours = minutes/60;
+		} else {
+			if (debug) console.log("getRoundedHours::Mod=" + mod(Number(round) - Number(minutes), Number(round)));
+
+			hours = (minutes +  mod(Number(round) - Number(minutes), Number(round)))/60;			
+		}
+
+		if (debug) console.log("getRoundedHours::hours=" + hours );
+
+		return hours;
+	}
+
+	function disableProjectsAndTasks(){
+		$("#Clients")[0].disabled    = true;
+		$("#Projects")[0].disabled    = true;
+		$("#Tasks")[0].disabled       = true;
+	}
+	function enableProjectsAndTasks(){
+		$("#Clients")[0].disabled    = false;
+		$("#Projects")[0].disabled    = false;
+		$("#Tasks")[0].disabled       = false;
+	}
+	
+	function mod(x, m) {
+	    var r=x%m;	    
+	    return r<0 ? r+m : r;
+	}
 	

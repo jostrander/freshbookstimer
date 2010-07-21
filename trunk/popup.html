@@ -15,12 +15,16 @@
 	function load(){
 		var running = false;
 
-		populateProjects();		
+		populateClients();		
 		
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.client")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.client")!=""){
+			$("#Clients").val(localStorage.getItem("com.yogs.chrome.freshbooks.client"));
+		}
+
 		if (localStorage.getItem("com.yogs.chrome.freshbooks.project")!=null &&
 				localStorage.getItem("com.yogs.chrome.freshbooks.project")!=""){
 			$("#Projects").val(localStorage.getItem("com.yogs.chrome.freshbooks.project"));
-			//document.getElementById("project").innerHTML = localStorage.getItem("com.yogs.chrome.freshbooks.project");
 		}
 
 		if (localStorage.getItem("com.yogs.chrome.freshbooks.task")!=null &&
@@ -63,34 +67,45 @@
 	}
 
 	function setRecordProject(){
+		localStorage.setItem("com.yogs.chrome.freshbooks.client", $("#Clients").val());
 		localStorage.setItem("com.yogs.chrome.freshbooks.project", $("#Projects").val());
 		localStorage.setItem("com.yogs.chrome.freshbooks.task", $("#Tasks").val());
 
-		if (pauseTime == null){
-			start = new Date();
-			bgpage.start = start;
-			localStorage.setItem("com.yogs.chrome.freshbooks.start", start.getTime());
-			
-		} else {
-			var timeBeforePause = (pauseTime.getTime() - start.getTime());
-			var now = new Date();
-			start = new Date(now.getTime() - timeBeforePause);
-			localStorage.setItem("com.yogs.chrome.freshbooks.start", start.getTime());
-			bgpage.start = start;
-			
-			pauseTime = null;
-			localStorage.removeItem("com.yogs.chrome.freshbooks.pause");
+		var running = false;
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.running")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.running")!=""){
+			running = localStorage.getItem("com.yogs.chrome.freshbooks.running");
 		}
 
-		refresh(); 		
-		bgpage.refresh();
-			
-		timeout=setInterval ( "refresh();", 250 );
-		localStorage.setItem("com.yogs.chrome.freshbooks.running",true);
-		//Stop the user changing the selected project while timer is running
-		disableProjectsAndTasks();
-
-		chrome.browserAction.setTitle({title:String("Recording: " + $("#Projects option:selected").text() + $("#Tasks option:selected").text())});
+		if (running){
+			setStatus("status_1", "Already Running. Reset or Submit before restarting.");
+		} else {
+			if (pauseTime == null){
+				start = new Date();
+				bgpage.start = start;
+				localStorage.setItem("com.yogs.chrome.freshbooks.start", start.getTime());
+				
+			} else {
+				var timeBeforePause = (pauseTime.getTime() - start.getTime());
+				var now = new Date();
+				start = new Date(now.getTime() - timeBeforePause);
+				localStorage.setItem("com.yogs.chrome.freshbooks.start", start.getTime());
+				bgpage.start = start;
+				
+				pauseTime = null;
+				localStorage.removeItem("com.yogs.chrome.freshbooks.pause");
+			}
+	
+			refresh(); 		
+			bgpage.refresh();
+				
+			timeout=setInterval ( "refresh();", 250 );
+			localStorage.setItem("com.yogs.chrome.freshbooks.running",true);
+			//Stop the user changing the selected project while timer is running
+			disableProjectsAndTasks();
+	
+			chrome.browserAction.setTitle({title:String("Recording: " + $("#Projects option:selected").text() + $("#Tasks option:selected").text())});
+		}
 		
 	}
 
@@ -115,12 +130,21 @@
 
 	
 	function reset(){
+		/*
+		var running = false;
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.running")!=null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.running")!=""){
+			running = localStorage.getItem("com.yogs.chrome.freshbooks.running");
+		}
+		if (running && confirm("Do you really want to clear your recorded time?")){
+		*/
 		start = null;
 		pauseTime = null;
 		clearInterval(timeout);
 
 		bgpage.reset();
 		
+		localStorage.removeItem("com.yogs.chrome.freshbooks.client");
 		localStorage.removeItem("com.yogs.chrome.freshbooks.project");
 		localStorage.removeItem("com.yogs.chrome.freshbooks.task");
 		localStorage.removeItem("com.yogs.chrome.freshbooks.start");
@@ -129,7 +153,7 @@
 		document.getElementById('timer_1').innerHTML = "00:00:00";
 		enableProjectsAndTasks();
 
-		chrome.browserAction.setTitle({title:String("FreshBooks TimeSheet")});
+		chrome.browserAction.setTitle({title:String(com.freshbooks.api.UA)});
 		chrome.browserAction.setBadgeText({text:String("")});
 		
 	}
@@ -154,12 +178,22 @@
 		
 		var display = (tHrs+":"+mins + ":" + secs);
 		document.getElementById('timer_1').innerHTML = display;
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != ""){
+			autoStop = localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop");
+
+			//If the user has set an auto-stop then pause the timer when its reached.
+			if (Number(elapsed/3600000) >= Number(autoStop)){
+				pause();
+			}		
+		}
+		
 	}
 
 	function submit()
-	{
-	    var login = "";
-		var token = "";
+	{	
+		var now = new Date();
 		var running = false;
 
 		if (localStorage.getItem("com.yogs.chrome.freshbooks.running")!=null &&
@@ -169,106 +203,20 @@
 
 		if (!running && null== pauseTime){
 			setStatus("status_1", "Nothing to submit, not recording");
+			return;
 		}
-
-		if (localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != null &&
-				localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != ""){
-			token = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
-		}
-		if (localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") != null &&
-				localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") !=""){
-			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
-		}
-
-		if (!validateLogin(login)) { alert("Invalid login"); return false; }
-		if (!validateToken(token)) { alert("Invalid token"); return false; }
-		
-		var r = com.freshbooks.api.GetXMLHttpRequest(login, token, true);
-	
-		var now = new Date();
-	//Handle if paused... && if zero hours
 		
 		var elapsedMS = (now.getTime() - start.getTime());
 	    // Read time; we must log in (fractional) hours.
 		// 3600 seconds per hour, 1000 milliseconds per second
-		var loggedTime = elapsedMS / 3600000;
-	
-		// Read Project
-		var projectId = $("#Projects")[0].value;
-	
-		// Read Task
-		var taskId = $("#Tasks")[0].value;
-		if (taskId == "") {
-			setStatus("status_1","You need to select a task");
-			return false;
-		}
-	
-		// Notify user that we're posting
-		disableProjectsAndTasks();
-		$("#submit")[0].disabled = true;
-	
-		function enableInputs() {
-			enableProjectsAndTasks();
-			$("#submit")[0].disabled = false;
-		};
-	
-		var entryCreateTimeout = setTimeout( function () {
-				alert( "Timed out. :(");
-				r.abort();
-				enableInputs();
-				entryCreateTimeout = null;
-			}, xmlTimeout);
-	
-		// Notify the user when we're done posting
-		r.onreadystatechange = function () {
-			if (r.readyState == 4 && r.status == 200)
-			{
-				if (entryCreateTimeout)
-				{
-					clearTimeout(entryCreateTimeout);
-					entryCreateTimeout = null;
-				}
-				
-				if (com.freshbooks.api.getResponseStatus(r.responseXML) == "ok") {
-					enableInputs();
-					
-					reset();
-					bgpage.reset();
-	
-					setStatus("status_1", "Hours submitted!");
-					$("#Notes")[0].value = "";
-				} else {
-					enableInputs();
-					setStatus("status_1", $("error",r.responseXML).text());
-				}
-			}
-		};
+		var loggedTime = getRoundedHours( (elapsedMS / 60000 ));
+
+		submitHours(loggedTime);
 	
 		// Don't count while we're submitting
 		pause();
+	}
 	
-		var d = new Date();
-		// Post hours
-		r.send(com.freshbooks.api.Request("time_entry.create",
-			{
-				time_entry: {
-					project_id: projectId,
-					task_id: taskId,
-					hours: loggedTime,
-					notes: "",
-					date: (""+d.getFullYear()+"-"+formatTwoDigits(d.getMonth()+1)+"-"+formatTwoDigits(d.getDate()))
-				}
-			}));
-	}
-
-	function disableProjectsAndTasks(){
-		$("#Projects")[0].disabled    = true;
-		$("#Tasks")[0].disabled       = true;
-	}
-	function enableProjectsAndTasks(){
-		$("#Projects")[0].disabled    = false;
-		$("#Tasks")[0].disabled       = false;
-	}
 </script>
 <style>
 *{
@@ -278,7 +226,7 @@
 body {
 	color: #3b5686;
 	background-color: white;
-	width: 640px;
+	width: 735px;
 }
 #main{
 	height:40px;
@@ -299,12 +247,16 @@ img{
 p.time{
 	width:70px;
 }
+p.client{
+	width:165px;
+	border:none;
+}
 p.project{
-	width:200px;
+	width:165px;
 	border:none;
 }
 p.task{
-	width:200px;
+	width:165px;
 	border:none;
 }
 p.run{
@@ -331,7 +283,7 @@ input.i{
 	cursor:pointer;
 }
 .select{
-	width:200px;
+	width:165px;
 	border:none;
 }
 
@@ -355,7 +307,7 @@ input.i{
 	background:#0075CE url(down_bgr.png) repeat-x top;
 	height:12px;
 	color:#fff;
-	width:638px;
+	width:733px;
 	padding:1px;
 	display:block;
 	
@@ -374,7 +326,7 @@ input.i{
 	background:#0075CE url(down_bgr.png) repeat-x bottom;
 	height:12px;
 	color:#fff;
-	width:638px;
+	width:100%;
 	padding:1px;
 	display:block;	
 }
@@ -393,10 +345,10 @@ p.status{
 <body onLoad="load();">
 <div id="main">
     <div id="title">
-    <p class="time">timer</p><p class="project">project</p><p class="task">task</><p class="run">run</p><p class="pause">pause</p><p class="reset">reset</p><p class="submit">submit</p>
+    <p class="time">timer</p><p class="client">client</p><p class="project">project</p><p class="task">task</><p class="run">run</p><p class="pause">pause</p><p class="reset">reset</p><p class="submit">submit</p>
     </div>
     <div class="timer" id="s1">
-    	<p id="timer_1" class="time">00:00:00</p><p class="project"><select id="Projects" class="select"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submit();"></p>
+    	<p id="timer_1" class="time">00:00:00</p><p class="client"><select id="Clients" class="select"><option value="-1">Clients</option></select></p><p class="project"><select id="Projects" class="select"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submit();"></p>
     </div>
     <div id="hidden">
 	<input on id="unfocus" value=""/>

@@ -8,6 +8,7 @@
 <script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
 <script type="text/javascript">
 	var myProjects;
+	var myClients;
 	var refreshCallback = null;
 	var interval;
 	var	start;
@@ -15,7 +16,8 @@
 	function load(){
 		var running;
 		var pause;
-		
+
+		loadClients();
 		loadProjects();
 
 		if (localStorage.getItem("com.yogs.chrome.freshbooks.running")!=null &&
@@ -43,6 +45,40 @@
 		}
 		
 	}
+
+	function loadClients()
+	{
+	    var login = "";
+		var token = "";
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.login_key") != ""){
+			token = localStorage.getItem("com.yogs.chrome.freshbooks.login_key");
+		}
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.logon_url") !=""){
+			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
+		}
+
+		if (!validateLogin(login)) { alert("Invalid login"); return false; }
+		if (!validateToken(token)) { alert("Invalid token"); return false; }
+		
+		com.freshbooks.api.fetchFullList(login,token,'client',{},xmlTimeout,
+			function (list) {
+				if (list.status.ok) {
+					if (debug) alert("Got client list OK");
+					
+					myClients = list.list;
+
+					if (debug) console.log(myClients);					
+				}
+				else
+				{
+					errorLoading(list);
+				}
+			});		
+	}
+
 	
 	function loadProjects()
 	{
@@ -135,12 +171,25 @@
 	
 	function refresh_interval(){
 		var now = new Date();
-		
+		var autoStop;
+
 		//addition of 500ms displays chosen time before starting to record
 		var elapsed = (now.getTime() - start.getTime() + 500);
 
 		var hrs = elapsed/3600000;
 		chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
+
+		if (localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != null &&
+				localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != ""){
+			autoStop = localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop");
+
+			//If the user has set an auto-stop then pause the timer when its reached.
+			if (Number(hrs) >= Number(autoStop)){
+				pause();
+				var now = new Date();
+				localStorage.setItem("com.yogs.chrome.freshbooks.pause", now.getTime());			
+			}		
+		}
 
 	}
 

@@ -19,7 +19,7 @@ if (!com) com = {};
 if (!com.freshbooks) com.freshbooks = {};
 com.freshbooks.api = {};
 
-com.freshbooks.api.debug = true;
+com.freshbooks.api.debug = false;
 
 (function(){  // So we get private variables; goes to the end of the file...
 
