@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<script type="text/javascript" src="js/jquery-1.2.6.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/jquery-1.4.2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
-<script type="text/javascript" src="js/json2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
 <script type="text/javascript">
 	var myProjects;
@@ -177,7 +176,6 @@
 		var elapsed = (now.getTime() - start.getTime() + 500);
 
 		var hrs = elapsed/3600000;
-		chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
 
 		if (localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != null &&
 				localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop") != ""){
@@ -186,9 +184,20 @@
 			//If the user has set an auto-stop then pause the timer when its reached.
 			if (Number(hrs) >= Number(autoStop)){
 				pause();
-				var now = new Date();
-				localStorage.setItem("com.yogs.chrome.freshbooks.pause", now.getTime());			
+				localStorage.setItem("com.yogs.chrome.freshbooks.pause", now.getTime());	
+				localStorage.removeItem("com.yogs.chrome.freshbooks.running");
+				
+				//Need to set the start Time so the timer only records the autoStop # hours.
+				var autoStopMiliSeconds = (autoStop * 3600000);
+				start = new Date((now.getTime() - Number(autoStopMiliSeconds)));
+				localStorage.setItem("com.yogs.chrome.freshbooks.start", start.getTime());
+						
+				chrome.browserAction.setBadgeText({text:String(Number(autoStop).toFixed(2))});
+			} else {
+				chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
 			}		
+		} else {
+			chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
 		}
 
 	}

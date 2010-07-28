@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<script type="text/javascript" src="js/jquery-1.2.6.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/jquery-1.4.2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
-<script type="text/javascript" src="js/json2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
 <script>
 
@@ -122,6 +121,7 @@
 			clearInterval(timeout);
 			pauseTime = new Date();
 			bgpage.pause();
+			localStorage.removeItem("com.yogs.chrome.freshbooks.running");
 			localStorage.setItem("com.yogs.chrome.freshbooks.pause", pauseTime.getTime());
 		} else {
 			setStatus("status_1", "Not set, either not recording or already paused");			
@@ -348,7 +348,7 @@ p.status{
     <p class="time">timer</p><p class="client">client</p><p class="project">project</p><p class="task">task</><p class="run">run</p><p class="pause">pause</p><p class="reset">reset</p><p class="submit">submit</p>
     </div>
     <div class="timer" id="s1">
-    	<p id="timer_1" class="time">00:00:00</p><p class="client"><select id="Clients" class="select"><option value="-1">Clients</option></select></p><p class="project"><select id="Projects" class="select"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submit();"></p>
+    	<p id="timer_1" class="time">00:00:00</p><p class="client"><select id="Clients" class="select" onchange="setProjectsFromClient(event)"><option value="-1">Clients</option></select></p><p class="project"><select id="Projects" class="select" onchange="setTasksFromProject(event)"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submit();"></p>
     </div>
     <div id="hidden">
 	<input on id="unfocus" value=""/>
