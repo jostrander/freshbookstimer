@@ -32,8 +32,9 @@
 
 			var timeBeforePause = (pauseTime.getTime() - start.getTime());
 			var now = new Date();
+			//update the stored values
 			start = new Date((now.getTime() - timeBeforePause));
-
+			
 			var hrs = timeBeforePause/3600000;
 			chrome.browserAction.setBadgeText({text:String(hrs.toFixed(2))});
 		}

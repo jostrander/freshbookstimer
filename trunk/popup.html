@@ -45,6 +45,7 @@
 			var timeBeforePause = (pauseTime.getTime() - start.getTime());
 			var now = new Date();
 			start = new Date((now.getTime() - timeBeforePause));
+			pauseTime = now;
 
 			refresh(); 
 
