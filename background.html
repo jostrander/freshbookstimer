@@ -94,8 +94,8 @@
 			login = localStorage.getItem("com.yogs.chrome.freshbooks.logon_url");
 		}
 
-		if (!validateLogin(login)) { alert("Invalid login"); return false; }
-		if (!validateToken(token)) { alert("Invalid token"); return false; }
+		if (!validateLogin(login)) { alert("Invalid login, you must go to the options pages and enter a valid Freshbooks login"); return false; }
+		if (!validateToken(token)) { alert("Invalid token, you must go to the options pages and enter a valid Freshbooks token"); return false; }
 		
 		com.freshbooks.api.fetchFullList(login,token,'project',{},xmlTimeout,
 			function (list) {

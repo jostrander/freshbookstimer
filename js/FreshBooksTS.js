@@ -3,7 +3,7 @@
 
 	com.freshbooks.api.UA = "Project Timer";
 	var bgpage = chrome.extension.getBackgroundPage();
-	var debug = false; 
+	var debug = true; 
 	var xmlTimeout = 15 * 1000; // Wait this many milliseconds for FreshBooks to reply before cancelling an XML call.
 
 	function gotofreshbooks() {
@@ -33,11 +33,14 @@
 		}
 		sortedList.sort(com.freshbooks.api.sortclient);
 		
-		// Add the new items
+		// Need a fake "Internal" client to load internal projects 
+		cl.options[0] = new Option("Internal", "internal");		// Add the new items
+		
 		for (var i in sortedList)
 		{
 			//if (debug) alert("Adding " + sortedList[i].id + " '" + sortedList[i].name + "'");
-			cl.options[i] = new Option(sortedList[i].organization, sortedList[i].id);
+			cl.options[1 * i+1] = new Option(sortedList[i].organization, sortedList[i].id);
+			
 		}
 
 		setProjectsFromClient();
@@ -71,16 +74,19 @@
 	function setProjectsFromClient()
 	{
 		// Get our combo box
-		var cientId = $("#Clients")[0].value;
+		var clientId = $("#Clients")[0].value;
 		var pr = $("#Projects")[0];
 
+		console.log("Loading projects for client id: " + clientId);
+		if (clientId == "internal") clientId = "";
+		
 		// Clear all previous values
 		pr.options.length = 0;
 		
 		var sortedList = [];
 
 		for (var id in bgpage.myProjects) {
-			if (bgpage.myProjects[id].client_id == cientId){
+			if (bgpage.myProjects[id].client_id == clientId){
 				sortedList.push({"id":id,"name":bgpage.myProjects[id].name});
 			}
 		}
