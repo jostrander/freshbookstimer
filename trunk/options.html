@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>Project Timer</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <script type="text/javascript" src="js/jquery-1.4.2.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooks2.1.js" charset="utf-8"></script>
 <script type="text/javascript" src="js/FreshBooksTS.js" charset="utf-8"></script>
@@ -14,24 +14,24 @@
 	}
 
 	function saveSettings() {
-	
+
 		if($("#login_key").val() != "")
 				localStorage.setItem("com.yogs.chrome.freshbooks.login_key", $("#login_key").val());
 		else
 		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
-		
+
 		if($("#logon_url").val() != "")
 				localStorage.setItem("com.yogs.chrome.freshbooks.logon_url", $("#logon_url").val());
 		else
 		localStorage.removeItem("com.yogs.chrome.freshbooks.logon_url");
-		
+
 		if($("#auto_stop").val() != "")
 				localStorage.setItem("com.yogs.chrome.freshbooks.auto_stop", $("#auto_stop").val());
 		else
 		localStorage.removeItem("com.yogs.chrome.freshbooks.auto_stop");
 
 		localStorage.setItem("com.yogs.chrome.freshbooks.round_time", $("input[name='round_time']:checked").val());
-		
+
 	}
 	function clearSettings() {
 		localStorage.removeItem("com.yogs.chrome.freshbooks.login_key");
@@ -43,10 +43,10 @@
 		$("#login_key").val( localStorage.getItem("com.yogs.chrome.freshbooks.login_key"));
 		$("#logon_url").val( localStorage.getItem("com.yogs.chrome.freshbooks.logon_url"));
 		$("#auto_stop").val( localStorage.getItem("com.yogs.chrome.freshbooks.auto_stop"));
-		
+
 		var str = localStorage.getItem("com.yogs.chrome.freshbooks.round_time");
 		$("input:radio[name=round_time]").val([ str ]);
-		$(".radiolist[value='" + str + "']").attr("checked", true);		
+		$(".radiolist[value='" + str + "']").attr("checked", true);
 	}
 	function goToUrl(url) {
 	  chrome.tabs.getAllInWindow(undefined, function(tabs) {
@@ -57,19 +57,19 @@
 	      }
 	    }
 	    chrome.tabs.create({url: url});
-	  });	  	
+	  });
 	}
-	
+
 	function submitHrs(){
 		var hrs = new Number( $("#Hours").val() );
-		
+
 		if (hrs == "NaN"){
-			alert("Please enter the number of hours in a valid numerical format");			
+			alert("Please enter the number of hours in a valid numerical format");
 		} else {
 			submitHours(Number(hrs));
 		}
 	}
-	
+
 	function reset(){
 		$("#Hours").val(' ');
 	}
@@ -134,7 +134,7 @@ table {
 
 table.top_table {
     position: relative;
-	border-bottom-width: 0px;	
+	border-bottom-width: 0px;
 	border-bottom-style: none;
 }
 
@@ -149,7 +149,7 @@ table.middle_table {
 
 table.bottom_table {
 	border-top-width: 0px;
-	border-top-style: none;	
+	border-top-style: none;
 }
 
 table td {
@@ -210,7 +210,7 @@ form {
 	height:12px;
 	width:100%;
 	padding:1px;
-	display:block;	
+	display:block;
 }
 #footer p{
 	font-family:Arial, Helvetica, sans-serif;
@@ -223,7 +223,7 @@ p.status{
 	text-align: center;
 }
 
-</style>	
+</style>
 </head>
 <body onload="load();">
 
@@ -232,14 +232,14 @@ p.status{
  	<form name="settings">
  	<table class="top_table">
         <tr>
-            <td>                
-                <span class="top_right"><img src="clock_48.png"></span>
+            <td>
+                <span class="top_right"><img src="icon_48.png"></span>
                 <h1>Options</h1>
                 <br /><p>Please take a moment and configure the extension to fit your needs. Ensure that you keep your Authentication as secret as you would a password.</p><br />
             </td>
         </tr>
  	</table>
- 	
+
  	<table class="middle_table">
         <tr>
             <td valign="top" colspan="2">
@@ -251,7 +251,7 @@ p.status{
         </tr>
         <tr>
         	<td class="left_column">Team URL:</td><td><input type="text" id="logon_url" name="logon_url" value="" class="url_start"></input>.freshbooks.com</td>
-        </tr>     	
+        </tr>
  	</table>
  	<table class="middle_table">
         <tr>
@@ -268,7 +268,7 @@ p.status{
                 <input type="radio" name="round_time" id="round_time1" value="6"></input> <label for="round_time1">.1 Hrs</label> <a title="Round to 0.1 Hrs (6 minutes) before submitting" style="cursor: help">?</a>
                 <input type="radio" name="round_time" id="round_time2" value="15"></input> <label for="round_time2">.25 Hrs</label> <a title="Round to 1/4 Hrs before submitting" style="cursor: help">?</a>
         	</td>
-        </tr>     	
+        </tr>
  	</table>
  	<table class="bottom_table">
         <tr>
@@ -284,13 +284,13 @@ p.status{
         </tr>
         <tr>
 	            <td class="left_column">Tasks:</td><td><select id="Tasks" class="select"><option value="-1">Tasks</option></select></td>
-        </tr> 	
+        </tr>
         <tr>
 	            <td class="left_column">Submit Time:</td><td><input type="text" id="Hours" class="input_4" maxlength="4"><img id="submit" class="button" src="submit.png" onClick="submitHrs();"></td>
-        </tr> 	
+        </tr>
         <tr>
 	            <td colspan="2"><div id="footer"><p id="status_1" class="status"></p></div></td>
-        </tr> 	
+        </tr>
  	</table>
 	<div style="text-align: right">
 		<button onclick="updateProjects();" style="font-weight: bold;">Update Projects</button><button onclick="clearSettings(); loadSettings();" style="font-weight: bold;">Clear Settings</button><button onclick="saveSettings();" style="font-weight: bold;">Save Settings</button>

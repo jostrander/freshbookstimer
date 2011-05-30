@@ -192,7 +192,7 @@
 		
 	}
 
-	function submit()
+	function submitCurrentTime()
 	{	
 		var now = new Date();
 		var running = false;
@@ -206,7 +206,7 @@
 			setStatus("status_1", "Nothing to submit, not recording");
 			return;
 		}
-		
+
 		var elapsedMS = (now.getTime() - start.getTime());
 	    // Read time; we must log in (fractional) hours.
 		// 3600 seconds per hour, 1000 milliseconds per second
@@ -349,7 +349,7 @@ p.status{
     <p class="time">timer</p><p class="client">client</p><p class="project">project</p><p class="task">task</><p class="run">run</p><p class="pause">pause</p><p class="reset">reset</p><p class="submit">submit</p>
     </div>
     <div class="timer" id="s1">
-    	<p id="timer_1" class="time">00:00:00</p><p class="client"><select id="Clients" class="select" onchange="setProjectsFromClient(event)"><option value="-1">Clients</option></select></p><p class="project"><select id="Projects" class="select" onchange="setTasksFromProject(event)"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submit();"></p>
+    	<p id="timer_1" class="time">00:00:00</p><p class="client"><select id="Clients" class="select" onchange="setProjectsFromClient(event)"><option value="-1">Clients</option></select></p><p class="project"><select id="Projects" class="select" onchange="setTasksFromProject(event)"><option value="-1">Projects</option></select></p><p class="task"><select id="Tasks" class="select"><option value="-1">Tasks</option></select></p><p class="run"><img class="button" src="run.png" onClick="setRecordProject();"></p><p class="pause"><img class="button" src="pause.png" onClick="pause();"></p><p class="reset"><img class="button" src="reset.png" onClick="reset();"></p><p><img id="submit" class="button" src="submit.png" onClick="submitCurrentTime();"></p>
     </div>
     <div id="hidden">
 	<input on id="unfocus" value=""/>
