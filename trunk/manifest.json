@@ -12,5 +12,5 @@
    "background_page": "background.html",   
    "options_page": "options.html",
    "permissions": [ "tabs", "http://*.freshbooks.com/", "https://*.freshbooks.com/" ],
-   "version": "1.2"
+   "version": "1.4"
 }

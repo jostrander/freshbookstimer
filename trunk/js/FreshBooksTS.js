@@ -3,7 +3,7 @@
 
 	com.freshbooks.api.UA = "Project Timer";
 	var bgpage = chrome.extension.getBackgroundPage();
-	var debug = true; 
+	var debug = false; 
 	var xmlTimeout = 15 * 1000; // Wait this many milliseconds for FreshBooks to reply before cancelling an XML call.
 
 	function gotofreshbooks() {
